@@ -115,8 +115,8 @@ else:
 
             # Convert accidents and avg_speed to numbers
             try:
-                accidents = float(accidents)
-                avg_speed = float(avg_speed)
+                accidents = float(accidents) if accidents else 0.0  # Default to 0 if empty
+                avg_speed = float(avg_speed) if avg_speed else 0.0  # Default to 0 if empty
             except ValueError:
                 st.error("Invalid input for accidents or average speed. Please enter valid numbers.")
                 st.stop()  # Stop execution if conversion fails
