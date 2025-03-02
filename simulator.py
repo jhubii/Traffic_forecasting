@@ -33,7 +33,7 @@ def preprocess_new_data(df, scaler_X, window_size, is_manual=False):
     if 'TIME(24 HOUR)' in df.columns:
         df['Hour'] = df['TIME(24 HOUR)'].str[:2].astype(int)
 
-    print(df.head());
+    print(df.head())
 
     df['HourSin'] = np.sin(2 * np.pi * df['Hour'] / 24)
     df['HourCos'] = np.cos(2 * np.pi * df['Hour'] / 24)
@@ -61,10 +61,12 @@ def preprocess_new_data(df, scaler_X, window_size, is_manual=False):
 
     return np.array(X_seq)
 
+# Load model and scalers
 model = load_model("traffic_forecasting.h5")
 scaler_X, scaler_y = load_scalers()
 expected_features = load_feature_names()
 
+# Streamlit app
 st.set_page_config(page_title="Traffic Volume Simulator", layout="centered")
 st.title("\U0001F6A6 Traffic Volume Prediction Simulator")
 st.write("Upload an Excel file or manually enter details to predict traffic volume.")
@@ -79,7 +81,6 @@ if uploaded_file:
     required_columns = ['DATE', 'TIME(24 HOUR)', 'DAY OF THE WEEK', 'WEATHER', 'ROAD CONDITION', 'HOLIDAY', 'ACCIDENTS', 'AVERAGE SPEED']
 
     if all(col in df.columns for col in required_columns):
-
         window_size = 24
         X_input = preprocess_new_data(df, scaler_X, window_size)
 
@@ -102,25 +103,45 @@ else:
     with col2:
         road_condition = st.selectbox("🛣 Road Condition", ["Dry", "Wet"])
         holiday = st.selectbox("🎉 Holiday", ["NO", "YES"])
-        accidents = st.number_input("⚠ Accidents", min_value=0, step=1)
-        avg_speed = st.number_input("🚗 Average Speed", min_value=0, step=1)
+        accidents = st.text_input("⚠ Accidents", value="0")  # Use text_input
+        avg_speed = st.text_input("🚗 Average Speed", value="0")  # Use text_input
 
     if st.button("🔮 Predict Traffic Volume"):
-        user_input = pd.DataFrame([{
-            'DATE': date.strftime("%Y/%m/%d"),
-            'TIME(24 HOUR)': f"{hour:02d}:00",
-            'WEATHER': weather,
-            'ROAD CONDITION': road_condition,
-            'HOLIDAY': holiday,
-            'ACCIDENTS': accidents,
-            'AVERAGE SPEED': avg_speed
-        }])
+        try:
+            # Validate inputs
+            if None in [date, hour, weather, road_condition, holiday, accidents, avg_speed]:
+                st.error("Please fill in all the fields.")
+                st.stop()  # Stop execution if inputs are invalid
 
-        window_size = 24
-        X_input = preprocess_new_data(user_input, scaler_X, window_size, is_manual=True)
+            # Convert accidents and avg_speed to numbers
+            try:
+                accidents = float(accidents)
+                avg_speed = float(avg_speed)
+            except ValueError:
+                st.error("Invalid input for accidents or average speed. Please enter valid numbers.")
+                st.stop()  # Stop execution if conversion fails
 
-        y_pred_scaled = model.predict(X_input).flatten()
-        y_pred = scaler_y.inverse_transform(y_pred_scaled.reshape(-1, 1)).flatten()
+            # Ensure accidents and avg_speed are non-negative
+            if accidents < 0 or avg_speed < 0:
+                st.error("Accidents and average speed must be non-negative.")
+                st.stop()  # Stop execution if values are negative
 
-        st.success(f"🚗 Predicted Traffic Volume: **{y_pred[0]:.2f}**")
+            user_input = pd.DataFrame([{
+                'DATE': date.strftime("%Y/%m/%d"),
+                'TIME(24 HOUR)': f"{hour:02d}:00",
+                'WEATHER': weather,
+                'ROAD CONDITION': road_condition,
+                'HOLIDAY': holiday,
+                'ACCIDENTS': accidents,
+                'AVERAGE SPEED': avg_speed
+            }])
 
+            window_size = 24
+            X_input = preprocess_new_data(user_input, scaler_X, window_size, is_manual=True)
+
+            y_pred_scaled = model.predict(X_input).flatten()
+            y_pred = scaler_y.inverse_transform(y_pred_scaled.reshape(-1, 1)).flatten()
+
+            st.success(f"🚗 Predicted Traffic Volume: **{y_pred[0]:.2f}**")
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}. Please ensure all inputs are valid and try again.")
