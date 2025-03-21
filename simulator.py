@@ -6,6 +6,7 @@ import tensorflow as tf
 import joblib
 from tensorflow.keras.models import load_model
 from tensorflow.keras.losses import MeanSquaredError
+import datetime
 
 # Register custom loss
 from tensorflow.keras.saving import register_keras_serializable
@@ -80,9 +81,9 @@ selected_route = st.selectbox("🛣 Select Route", routes)
 
 col1, col2 = st.columns(2)
 with col1:
-    start_date = st.date_input("Start Date", pd.to_datetime("2025-07-01"))
+    start_date = st.date_input("Start Date", value=datetime.date.today())
 with col2:
-    end_date = st.date_input("End Date", pd.to_datetime("2025-07-04"))
+    end_date = st.date_input("End Date", value=datetime.date.today() + datetime.timedelta(days=1))
 
 # Validate Date
 if start_date > end_date:
