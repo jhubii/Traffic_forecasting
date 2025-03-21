@@ -91,7 +91,8 @@ if start_date > end_date:
     st.stop()
 
 # Generate Future Timestamps
-date_range = pd.date_range(start=start_date, end=end_date, freq="H")
+window_start_date = start_date - pd.Timedelta(days=1)
+date_range = pd.date_range(start=window_start_date, end=end_date, freq="H")
 df_future = pd.DataFrame({"Datetime": date_range})
 df_future["Date"] = df_future["Datetime"].dt.date
 df_future["Time"] = df_future["Datetime"].dt.strftime("%H:%M:%S")
@@ -147,10 +148,11 @@ if st.button("🔮 Predict"):
 
         # Build output DataFrame
         prediction_df = df_future.iloc[window_size:].reset_index(drop=True)
+        prediction_df["Day of the Week"] = prediction_df["Datetime"].dt.day_name()
         prediction_df["Predicted Traffic Volume"] = y_pred
 
         st.subheader("📊 Predicted Traffic Volumes")
-        st.dataframe(prediction_df[["Datetime", "Predicted Traffic Volume"]])
+        st.dataframe(prediction_df[["Datetime", "Day of the Week", "Predicted Traffic Volume"]])
 
     except Exception as e:
         st.error(f"❌ Prediction failed: {e}")
