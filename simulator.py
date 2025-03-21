@@ -68,7 +68,7 @@ def load_data():
     return pd.concat(df_list, ignore_index=True)
 
 # Initialize App
-st.title("🚦 Traffic Forecasting Simulator")
+st.title("🚦 Traffic Volume Prediction")
 df = load_data()
 target_column = "TRAFFIC VOLUME"
 lags = [1, 2, 3, 6, 12, 24]
